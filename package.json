@@ -4,7 +4,7 @@
 	"version": "0.0.0",
 	"scripts": {
 		"dev": "cross-env MODE=development vite",
-		"build": "npx vue-tsc && cross-env MODE=production vite build",
+		"build": "cross-env MODE=production vite build",
 		"build:esm": "npx vue-tsc && cross-env MODE=production ESM=true vite build",
 		"preview": "vite preview",
 		"prettier": "npx vue-tsc && prettier src/**/*.{vue,js,ts}{,x} --no-error-on-unmatched-pattern --check",
