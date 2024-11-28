@@ -11,20 +11,45 @@
 
 	const onFocus = (() => {
 		let timeout
-		return (type: 'out' | 'in') => {
-			if (!type) return
+		let inFocusHandler: (() => void) | null
+		let outFocusHandler: (() => void) | null
+		let isDocumentListening = false
+		const confirmOnlyOutFocus = () => {
+			if (outFocusHandler && !inFocusHandler) {
+				outFocusHandler()
+				document.removeEventListener('click', confirmOnlyOutFocus)
+				isDocumentListening = false
+			}
+		}
+
+		return (type?: 'out' | 'in') => {
+			if (!type) {
+				outFocusHandler?.()
+				inFocusHandler?.()
+				return
+			}
 
 			if (type === 'in') {
-				if (timeout) clearTimeout(timeout)
-				isSearchTagBarActive.value = true
-				if (elSearchTagInput.value) {
-					elSearchTagInput.value.focus()
+				if (!isDocumentListening) {
+					isDocumentListening = true
+					document.addEventListener('click', confirmOnlyOutFocus)
+				}
+				inFocusHandler = () => {
+					if (timeout) clearTimeout(timeout)
+					isSearchTagBarActive.value = true
+					if (elSearchTagInput.value) {
+						elSearchTagInput.value.focus()
+					}
+					inFocusHandler = null
 				}
 			} else if (type === 'out') {
-				if (timeout) clearTimeout(timeout)
-				timeout = setTimeout(() => {
-					isSearchTagBarActive.value = false
-				}, 10)
+				outFocusHandler = () => {
+					if (timeout) clearTimeout(timeout)
+					timeout = setTimeout(() => {
+						isSearchTagBarActive.value = false
+					}, 0)
+					outFocusHandler = null
+				}
 			}
 		}
 	})() // onFocus
@@ -60,8 +85,8 @@
 			:class="{
 				'--is-active': isSearchTagBarActive,
 			}"
-			@click="() => onFocus('in')"
-			@focusout="() => onFocus('out')"
+			@mousedown="() => onFocus('in')"
+			@mouseup="() => onFocus()"
 		>
 			<input
 				class="search-tag-bar__input"
@@ -70,6 +95,7 @@
 				v-model="searchTagInputVal"
 				@keyup="onKeypressSearchTagInput"
 				ref="search-tag-input"
+				@focusout="() => onFocus('out')"
 			/>
 			<div class="search-tag-bar__tag-list">
 				<template v-for="(tagMessage, id) in tagList">
@@ -173,6 +199,10 @@
 			&:has(.search-tag-bar__tag-item) {
 				display: block;
 			}
+
+			@media screen and (min-width: $screen-1024) {
+				padding: 8px 8px 8px 0;
+			}
 		}
 
 		&__tag-item {
@@ -188,6 +218,10 @@
 
 			&:last-child {
 				margin-right: 0;
+			}
+
+			@media screen and (min-width: $screen-1024) {
+				height: 24px;
 			}
 		}
 
